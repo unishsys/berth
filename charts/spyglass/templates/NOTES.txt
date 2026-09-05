@@ -1,14 +1,14 @@
 Spyglass {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
 
 {{ if eq .Values.auth.mode "none" -}}
-⚠  AUTH_MODE=none — the dashboard is UNAUTHENTICATED. Anyone who can reach it has
+WARNING: AUTH_MODE=none, the dashboard is UNAUTHENTICATED. Anyone who can reach it has
    full cluster access. Set `auth.mode=token` (the default) before exposing it.
 {{- else if eq .Values.auth.mode "token" -}}
 Auth: a Bearer token is required. Read it with:
 
   kubectl -n {{ .Release.Namespace }} get secret {{ .Values.auth.existingSecret | default (include "spyglass.secretName" .) }} -o jsonpath='{.data.AUTH_TOKEN}' | base64 -d ; echo
 {{- else -}}
-Auth: proxy-header mode — your upstream proxy must set {{ .Values.auth.proxyHeader }}.
+Auth: proxy-header mode, your upstream proxy must set {{ .Values.auth.proxyHeader }}.
 {{- end }}
 
 License: {{ if or .Values.license.key .Values.license.existingSecret }}a license key is applied.{{ else }}Community tier (free, up to 10 nodes). Beyond the cap, changes are blocked until you start a trial or upgrade.{{ end }}
@@ -16,7 +16,7 @@ License: {{ if or .Values.license.key .Values.license.existingSecret }}a license
 
 AI SRE assistant: {{ .Values.ai.providers }}{{ if .Values.ai.persistence.enabled }} · ledger persisted at {{ .Values.ai.persistence.dataDir }}{{ else }} · ledger in-memory (set ai.persistence.enabled for durable usage/budgets){{ end }}
 {{- if and (regexMatch "anthropic|claude|bedrock" .Values.ai.providers) (eq .Values.auth.mode "none") (not .Values.ai.allowCloudWithoutAuth) }}
-  ⚠  Cloud AI providers are DISABLED because auth.mode=none (an anonymous caller could spend your key).
+  WARNING: Cloud AI providers are DISABLED because auth.mode=none (an anonymous caller could spend your key).
      Set auth.mode=token, or ai.allowCloudWithoutAuth=true on a trusted cluster. Local Ollama still works.
 {{- else if regexMatch "anthropic|claude|bedrock" .Values.ai.providers }}
   Cloud AI providers need an Enterprise license; on Community only local Ollama is offered.

@@ -5,49 +5,49 @@ clusters from a single web UI. Observe nodes, pods, deployments, and services;
 stream pod logs live; create and edit resources with cluster-aware visual
 builders; expose an app end-to-end (Deployment → Service → Certificate → Gateway
 → Route) in one guided flow; and get an at-a-glance overview of endpoint health
-and capacity. The whole app ships as **one container** — a Vue SPA embedded in a
+and capacity. The whole app ships as **one container**, a Vue SPA embedded in a
 small Go binary that runs inside your cluster.
 
 > Spyglass is proprietary, commercial software. See the [EULA](LICENSE). It is
-> **freemium**: free for small clusters, with paid tiers for larger ones — and
+> **freemium**: free for small clusters, with paid tiers for larger ones, and
 > it always verifies its license **offline** (no phone-home).
 
-This repository is the **public distribution** for Spyglass — the Helm chart,
+This repository is the **public distribution** for Spyglass, the Helm chart,
 release binaries, and container image live here. The source is not public.
 
-- 🌐 Website & sign-up: **https://spyglass.sh**
-- 💳 Pricing & trials: **https://spyglass.sh/pricing**
-- 📦 Container image: `ghcr.io/unishsys/spyglass`
-- ⎈ Helm chart (OCI): `oci://ghcr.io/unishsys/charts/spyglass`
+- Website & sign-up: **https://spyglass.agrohi.com**
+- Pricing & trials: **https://spyglass.agrohi.com/pricing/**
+- Container image: `ghcr.io/unishsys/spyglass`
+- Helm chart (OCI): `oci://ghcr.io/unishsys/charts/spyglass`
 
 ---
 
 ## Editions
 
 Spyglass is gated by **cluster size (node count)**. **Viewing is always free,
-with no key.** *Making changes* (create/edit/delete) requires a license — a free
+with no key.** *Making changes* (create/edit/delete) requires a license, a free
 Community key, or a trial/paid key. Beyond your node cap, changes pause until you
 upgrade; the dashboard always stays fully readable.
 
 | Edition | Limits | How to get it |
 | --- | --- | --- |
-| **Community** | up to 10 nodes, single cluster | free — [create an account](https://spyglass.sh) for a key |
-| **Enterprise** | unlimited nodes, per cluster | subscription with a 14-day trial — [see pricing](https://spyglass.sh/pricing) |
+| **Community** | up to 10 nodes, single cluster | free, [create an account](https://spyglass.agrohi.com) for a key |
+| **Enterprise** | unlimited nodes, per cluster | subscription with a 14-day trial, [see pricing](https://spyglass.agrohi.com/pricing/) |
 
 > SSO/OIDC, RBAC, audit log, multi-cluster, and private agentic AI are the
-> Enterprise roadmap — [design partners welcome](https://spyglass.sh/pricing).
+> Enterprise roadmap, [design partners welcome](https://spyglass.agrohi.com/pricing/).
 
 ## 1. Register & get a license key
 
-1. Create a free account at **https://spyglass.sh**. A **Community** key is
+1. Create a free account at **https://spyglass.agrohi.com**. A **Community** key is
    issued to you automatically.
-2. For unlimited evaluation, [start a 14-day trial](https://spyglass.sh/pricing);
+2. For unlimited evaluation, [start a 14-day trial](https://spyglass.agrohi.com/pricing/);
    to subscribe, pick a plan at checkout.
 3. Your current key (and a personalized install guide) is always available on
-   your **dashboard** at https://spyglass.sh. Keys are renewed/extended
+   your **dashboard** at https://spyglass.agrohi.com. Keys are renewed/extended
    automatically while your subscription is active.
 
-You can install and **view** your cluster without any key — you only need one to
+You can install and **view** your cluster without any key, you only need one to
 make changes.
 
 ## 2. Install
@@ -103,7 +103,7 @@ helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass --reuse-v
 The current tier, trial countdown, and node usage are shown in the dashboard's
 license banner.
 
-> **Security:** Spyglass has cluster-wide access — treat dashboard access as
+> **Security:** Spyglass has cluster-wide access, treat dashboard access as
 > cluster access. Don't run `auth.mode=none` on shared/exposed clusters, and
 > serve it over HTTPS.
 
@@ -154,7 +154,7 @@ Binaries are published for:
 
 ## 3. Usage
 
-- **Run modes:** `incluster` (inside a pod, uses the ServiceAccount — what the
+- **Run modes:** `incluster` (inside a pod, uses the ServiceAccount, what the
   Helm chart runs) or `remotecluster` (uses your local `~/.kube/config`).
 - **Authentication:** the Helm chart defaults to `token` mode and generates a
   stable token. Read it from the `spyglass-secrets` Secret (above). For a local
@@ -186,7 +186,7 @@ See `helm show values oci://ghcr.io/unishsys/charts/spyglass` for the full list.
 
 ## Helm configuration
 
-The chart is built for real clusters — scheduling onto tainted pools, policy
+The chart is built for real clusters, scheduling onto tainted pools, policy
 engines, private registries, HA, and locked-down security all have first-class
 flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 `helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass -n spyglass -f my-values.yaml`.
@@ -215,7 +215,7 @@ flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 | `securityContext` | restricted | Container-level (no-priv-escalation, read-only rootfs, drop ALL caps). |
 | `rbac.create` | `true` | Set `false` to manage the cluster-scoped ClusterRole/Binding yourself. |
 | `serviceAccount.annotations` | `{}` | Cloud workload identity (AKS/EKS/GKE). |
-| `commonLabels` / `commonAnnotations` | `{}` | Applied to **every** object — for OPA Gatekeeper / Kyverno requirements or cost tags. |
+| `commonLabels` / `commonAnnotations` | `{}` | Applied to **every** object, for OPA Gatekeeper / Kyverno requirements or cost tags. |
 | `podLabels` / `podAnnotations` | `{}` | Service-mesh injection, Prometheus scrape hints. |
 | `networkPolicy.enabled` | `false` | Restrict inbound to the UI port; `allowedNamespaces` whitelists callers. |
 
@@ -233,7 +233,7 @@ flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 ### AI SRE assistant
 
 The dashboard has a built-in, **read-only** AI SRE that reasons over your live
-cluster. You bring the model and the key — Spyglass calls the provider directly
+cluster. You bring the model and the key, Spyglass calls the provider directly
 from inside the cluster and never proxies, meters, or bills tokens. Local Ollama
 is available on every tier; Claude (Anthropic API or Amazon Bedrock, on your own
 key) needs an Enterprise license **and** dashboard auth (`auth.mode != none`), so
@@ -244,7 +244,7 @@ an anonymous caller can never spend your key.
 | `ai.providers` | `ollama` | Comma-separated: `ollama`, `anthropic`, `claude` (alias `bedrock`). |
 | `ai.defaultProvider` | _(first listed)_ | Provider used when a chat names none. |
 | `ai.ollama.host` / `ai.ollama.model` | in-cluster svc / `sabbir/spyglass-sre` | Local model endpoint and tag. |
-| `ai.ollama.numCtx` | `16384` | Ollama context window — do not lower (smaller loops the model). |
+| `ai.ollama.numCtx` | `16384` | Ollama context window, do not lower (smaller loops the model). |
 | `ai.anthropic.apiKey` / `.existingSecret` | _(unset)_ | Anthropic API key inline or from a Secret (`ANTHROPIC_API_KEY`). |
 | `ai.anthropic.model` | `claude-opus-5` | e.g. `claude-sonnet-5` for lower cost. |
 | `ai.bedrock.token` / `.existingSecret` | _(unset)_ | Bedrock bearer token; empty uses the pod's AWS credential chain. |
@@ -257,7 +257,7 @@ an anonymous caller can never spend your key.
 
 The rootfs is read-only, so the ledger needs a writable volume: enable
 `ai.persistence` (or leave it off to keep usage/memory in-memory). The store is a
-per-pod SQLite file — with `replicaCount > 1` and a `ReadWriteOnce` volume only one
+per-pod SQLite file, with `replicaCount > 1` and a `ReadWriteOnce` volume only one
 pod mounts it, so for one shared ledger/budget use a `ReadWriteMany` class or run a
 single replica. Most of this is also editable at runtime in **Settings → AI**
 (requires auth). Full reference: `https://spyglass.agrohi.com/how-ai-works/`.
@@ -386,6 +386,6 @@ extraVolumeMounts:
 
 ## Support & legal
 
-- Docs & guides: https://spyglass.sh
-- Support: support@spyglass.sh
-- License: [EULA](LICENSE) · Privacy & Terms: https://spyglass.sh
+- Docs & guides: https://spyglass.agrohi.com
+- Support: support@agrohi.com
+- License: [EULA](LICENSE) · Privacy & Terms: https://spyglass.agrohi.com

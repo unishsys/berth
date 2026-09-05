@@ -15,7 +15,7 @@ imagePullSecrets: []
 service:
   type: ClusterIP
   port: 8081
-  # Annotations on the Service — e.g. an internal cloud load balancer:
+  # Annotations on the Service, e.g. an internal cloud load balancer:
   #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"   (AKS)
   #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"     (EKS)
   annotations: {}
@@ -36,12 +36,12 @@ license:
   existingSecret: "" # Secret holding key LICENSE_KEY (overrides .key)
 
 # Where the in-app "start a trial / upgrade" prompts link to.
-upgradeUrl: https://spyglass.sh/pricing
+upgradeUrl: https://spyglass.agrohi.com/pricing/
 
 # AI SRE assistant. Provider-pluggable and runs IN-PROCESS in the dashboard (no
 # separate service, no Spyglass-hosted endpoint). You bring the model and the
 # key: the dashboard calls the provider directly from inside your cluster with
-# credentials you supply. Every tool the agent has is READ-ONLY — it inspects
+# credentials you supply. Every tool the agent has is READ-ONLY, it inspects
 # the cluster and proposes fixes, it never applies changes.
 #
 # Providers:
@@ -51,7 +51,7 @@ upgradeUrl: https://spyglass.sh/pricing
 #
 # Cloud providers (anthropic, claude) are offered only when the dashboard is
 # authenticated (auth.mode != none) AND an Enterprise license is present. With
-# auth.mode=none or on Community, only local Ollama is offered — an anonymous
+# auth.mode=none or on Community, only local Ollama is offered, an anonymous
 # caller can never spend your key. Most of this is also editable at runtime from
 # the dashboard's Settings → AI page (requires auth.mode != none).
 ai:
@@ -142,7 +142,7 @@ telemetryDisabled: false
 cors:
   allowedOrigins: ""
 
-# Ingress — controller-agnostic (uses ingressClassName + standard fields, no
+# Ingress, controller-agnostic (uses ingressClassName + standard fields, no
 # vendor annotations). Terminate TLS at the ingress or via tls.secretName.
 ingress:
   enabled: false
@@ -167,12 +167,12 @@ resources:
 # --- RBAC / identity ---------------------------------------------------------
 # The chart always creates the ServiceAccount the pod runs as. Set rbac.create
 # to false to manage the (cluster-scoped) ClusterRole + ClusterRoleBinding
-# yourself — e.g. when a security team owns RBAC (separation of duties).
+# yourself, e.g. when a security team owns RBAC (separation of duties).
 rbac:
   create: true
 
 serviceAccount:
-  # Annotations on the ServiceAccount — used for cloud workload identity:
+  # Annotations on the ServiceAccount, used for cloud workload identity:
   #   azure.workload.identity/client-id: <client-id>        (AKS)
   #   eks.amazonaws.com/role-arn: arn:aws:iam::...:role/... (EKS / IRSA)
   #   iam.gke.io/gcp-service-account: <gsa>@<project>...    (GKE)
@@ -192,7 +192,7 @@ podLabels: {}
 
 # --- Security context --------------------------------------------------------
 # Restricted-by-default (passes the Pod Security "restricted" profile). On
-# OpenShift, drop the fixed UIDs so the SCC can assign them — set
+# OpenShift, drop the fixed UIDs so the SCC can assign them, set
 # podSecurityContext to {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}.
 podSecurityContext:
   runAsNonRoot: true
@@ -230,7 +230,7 @@ topologySpreadConstraints: []
 #      matchLabels:
 #        app: spyglass
 
-# Protect the dashboard from preemption/eviction under pressure — useful on
+# Protect the dashboard from preemption/eviction under pressure, useful on
 # spot/preemptible pools. e.g. "system-cluster-critical" or your own class.
 priorityClassName: ""
 
@@ -243,7 +243,7 @@ revisionHistoryLimit: 3
 strategy: {}
 
 # --- Probes (HTTP GET /ping) -------------------------------------------------
-# Only the timing fields — the path/port are fixed. Loosen these on slow
+# Only the timing fields, the path/port are fixed. Loosen these on slow
 # clusters, or add a startupProbe for slow first starts.
 livenessProbe:
   initialDelaySeconds: 15
@@ -255,7 +255,7 @@ readinessProbe:
 startupProbe: {}
 
 # --- Extra volumes -----------------------------------------------------------
-# Mount additional volumes — e.g. a corporate/self-signed CA bundle the app
+# Mount additional volumes, e.g. a corporate/self-signed CA bundle the app
 # should trust. Mount read-only; the root filesystem is read-only.
 extraVolumes: []
 #  - name: ca-bundle
@@ -283,7 +283,7 @@ podDisruptionBudget:
 #
 # CAVEAT: when allowedNamespaces is set, the rule restricts the dashboard port to
 # those namespaces. kubelet liveness/readiness probes come from the node (not a
-# namespace), and some CNIs (e.g. Calico) will then block them — causing a
+# namespace), and some CNIs (e.g. Calico) will then block them, causing a
 # restart loop. If you set allowedNamespaces, confirm your CNI still permits
 # node→pod health probes, or also allow the node/pod CIDR.
 networkPolicy:
