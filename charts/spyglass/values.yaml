@@ -38,6 +38,35 @@ license:
 # Where the in-app "start a trial / upgrade" prompts link to.
 upgradeUrl: https://spyglass.sh/pricing
 
+# AI assistant. Provider-pluggable and runs IN-PROCESS in the dashboard (no
+# separate service). Ollama is local/in-cluster and unmetered; Claude runs on
+# Amazon Bedrock (metered) with your own API key. Operators can also change most
+# of this at runtime from the dashboard's Settings → AI page (requires auth.mode
+# != none). See the AI configuration docs.
+ai:
+  # Which providers to enable and the default, e.g. "ollama" or "ollama,claude".
+  providers: "ollama"
+  defaultProvider: "ollama"
+  # Ollama (local model). Point host at an in-cluster Ollama service. The default
+  # model is the tuned, published Spyglass SRE model.
+  ollama:
+    host: "http://ollama.ollama.svc:11434"
+    model: "sabbir/spyglass-sre"
+    # Context window. Ollama's own default (4096) is too small for the SRE tools
+    # and makes the model loop/derail; keep this at 16384+.
+    numCtx: 16384
+  # Claude via Amazon Bedrock (optional; enable by adding "claude" to providers).
+  # Provide the Bedrock bearer token inline (stored in the chart Secret) or via an
+  # existing Secret with key AWS_BEARER_TOKEN_BEDROCK.
+  bedrock:
+    token: ""
+    existingSecret: ""
+    region: "us-east-1"
+    model: "" # empty = backend default (anthropic.claude-opus-4-8)
+  # Persist Settings-page changes across restarts. Set to a path on a mounted
+  # volume (e.g. /data/ai-config.json); empty = changes are live-only.
+  configPath: ""
+
 # Optional anonymous usage ping. Set true to disable.
 telemetryDisabled: false
 

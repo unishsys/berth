@@ -99,6 +99,36 @@ spec:
         {{- end }}
         - name: UPGRADE_URL
           value: {{ .Values.upgradeUrl | quote }}
+        # --- AI assistant ---
+        - name: AI_PROVIDERS
+          value: {{ .Values.ai.providers | quote }}
+        - name: AI_PROVIDER
+          value: {{ .Values.ai.defaultProvider | quote }}
+        - name: OLLAMA_HOST
+          value: {{ .Values.ai.ollama.host | quote }}
+        - name: OLLAMA_MODEL
+          value: {{ .Values.ai.ollama.model | quote }}
+        - name: OLLAMA_NUM_CTX
+          value: {{ .Values.ai.ollama.numCtx | quote }}
+        {{- if .Values.ai.bedrock.region }}
+        - name: AWS_REGION
+          value: {{ .Values.ai.bedrock.region | quote }}
+        {{- end }}
+        {{- if .Values.ai.bedrock.model }}
+        - name: MODEL
+          value: {{ .Values.ai.bedrock.model | quote }}
+        {{- end }}
+        {{- if or .Values.ai.bedrock.token .Values.ai.bedrock.existingSecret }}
+        - name: AWS_BEARER_TOKEN_BEDROCK
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ai.bedrock.existingSecret | default (include "spyglass.secretName" .) }}
+              key: AWS_BEARER_TOKEN_BEDROCK
+        {{- end }}
+        {{- if .Values.ai.configPath }}
+        - name: AI_CONFIG_PATH
+          value: {{ .Values.ai.configPath | quote }}
+        {{- end }}
         {{- if .Values.telemetryDisabled }}
         - name: TELEMETRY_DISABLED
           value: "true"
