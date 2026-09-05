@@ -39,5 +39,5 @@ spyglass-secrets
 Name of the PVC backing the AI data dir (ledger + memory + settings).
 */}}
 {{- define "spyglass.aiPvcName" -}}
-{{ .Values.ai.persistence.existingClaim | default "spyglass-ai-data" }}
+{{ ((.Values.ai | default dict).persistence | default dict).existingClaim | default "spyglass-ai-data" }}
 {{- end -}}

@@ -3,7 +3,8 @@ PersistentVolumeClaim for the AI usage ledger + incident memory (embedded SQLite
 and the Settings-page overrides. Created only when ai.persistence is enabled and
 no existingClaim is supplied. See values.yaml for the multi-replica caveat.
 */}}
-{{- if and .Values.ai.persistence.enabled (not .Values.ai.persistence.existingClaim) }}
+{{- $aiPersist := (.Values.ai | default dict).persistence | default dict -}}
+{{- if and $aiPersist.enabled (not $aiPersist.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -16,11 +17,11 @@ metadata:
   {{- end }}
 spec:
   accessModes:
-    - {{ .Values.ai.persistence.accessMode | quote }}
+    - {{ $aiPersist.accessMode | default "ReadWriteOnce" | quote }}
   resources:
     requests:
-      storage: {{ .Values.ai.persistence.size | quote }}
-  {{- if .Values.ai.persistence.storageClass }}
-  storageClassName: {{ .Values.ai.persistence.storageClass | quote }}
+      storage: {{ $aiPersist.size | default "1Gi" | quote }}
+  {{- if $aiPersist.storageClass }}
+  storageClassName: {{ $aiPersist.storageClass | quote }}
   {{- end }}
 {{- end }}

@@ -1,3 +1,9 @@
+{{- $ai := .Values.ai | default dict -}}
+{{- $aiOllama := $ai.ollama | default dict -}}
+{{- $aiAnthropic := $ai.anthropic | default dict -}}
+{{- $aiBedrock := $ai.bedrock | default dict -}}
+{{- $aiGuard := $ai.guardrails | default dict -}}
+{{- $aiPersist := $ai.persistence | default dict -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -100,92 +106,94 @@ spec:
         - name: UPGRADE_URL
           value: {{ .Values.upgradeUrl | quote }}
         # --- AI SRE assistant (bring-your-own-key; all tools read-only) ---
+        # Nil-safe locals (default dict) keep this rendering across value-schema changes, so
+        # `helm upgrade --reuse-values` from a release predating ai.* still renders.
         - name: AI_PROVIDERS
-          value: {{ .Values.ai.providers | quote }}
-        {{- if .Values.ai.defaultProvider }}
+          value: {{ $ai.providers | default "ollama" | quote }}
+        {{- if $ai.defaultProvider }}
         - name: AI_PROVIDER
-          value: {{ .Values.ai.defaultProvider | quote }}
+          value: {{ $ai.defaultProvider | quote }}
         {{- end }}
         - name: EFFORT
-          value: {{ .Values.ai.effort | quote }}
+          value: {{ $ai.effort | default "high" | quote }}
         - name: AI_THINKING
-          value: {{ .Values.ai.thinking | quote }}
+          value: {{ $ai.thinking | default "adaptive" | quote }}
         - name: MAX_TOKENS
-          value: {{ .Values.ai.maxTokens | quote }}
+          value: {{ $ai.maxTokens | default 8192 | int64 | quote }}
         - name: AI_MAX_TOOL_ITERATIONS
-          value: {{ .Values.ai.maxToolIterations | quote }}
+          value: {{ $ai.maxToolIterations | default 8 | int64 | quote }}
         - name: AI_RUN_TIMEOUT_SECONDS
-          value: {{ .Values.ai.runTimeoutSeconds | quote }}
+          value: {{ $ai.runTimeoutSeconds | default 180 | int64 | quote }}
         - name: AI_SNAPSHOT_INTERVAL_SECONDS
-          value: {{ .Values.ai.snapshotIntervalSeconds | quote }}
+          value: {{ $ai.snapshotIntervalSeconds | default 25 | int64 | quote }}
         # Ollama (local, unmetered)
         - name: OLLAMA_HOST
-          value: {{ .Values.ai.ollama.host | quote }}
+          value: {{ $aiOllama.host | default "http://ollama.ollama.svc:11434" | quote }}
         - name: OLLAMA_MODEL
-          value: {{ .Values.ai.ollama.model | quote }}
+          value: {{ $aiOllama.model | default "sabbir/spyglass-sre" | quote }}
         - name: OLLAMA_NUM_CTX
-          value: {{ .Values.ai.ollama.numCtx | quote }}
+          value: {{ $aiOllama.numCtx | default 16384 | int64 | quote }}
         - name: OLLAMA_MAX_TOKENS
-          value: {{ .Values.ai.ollama.maxTokens | quote }}
+          value: {{ $aiOllama.maxTokens | default 8192 | int64 | quote }}
         # Claude via the Anthropic API (Enterprise)
-        {{- if .Values.ai.anthropic.model }}
+        {{- if $aiAnthropic.model }}
         - name: ANTHROPIC_MODEL
-          value: {{ .Values.ai.anthropic.model | quote }}
+          value: {{ $aiAnthropic.model | quote }}
         {{- end }}
-        {{- if .Values.ai.anthropic.baseUrl }}
+        {{- if $aiAnthropic.baseUrl }}
         - name: ANTHROPIC_BASE_URL
-          value: {{ .Values.ai.anthropic.baseUrl | quote }}
+          value: {{ $aiAnthropic.baseUrl | quote }}
         {{- end }}
-        {{- if or .Values.ai.anthropic.apiKey .Values.ai.anthropic.existingSecret }}
+        {{- if or ($aiAnthropic.apiKey) ($aiAnthropic.existingSecret) }}
         - name: ANTHROPIC_API_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.ai.anthropic.existingSecret | default (include "spyglass.secretName" .) }}
+              name: {{ $aiAnthropic.existingSecret | default (include "spyglass.secretName" .) }}
               key: ANTHROPIC_API_KEY
         {{- end }}
         # Claude via Amazon Bedrock (Enterprise)
-        {{- if .Values.ai.bedrock.region }}
+        {{- if $aiBedrock.region }}
         - name: AWS_REGION
-          value: {{ .Values.ai.bedrock.region | quote }}
+          value: {{ $aiBedrock.region | quote }}
         {{- end }}
-        {{- if .Values.ai.bedrock.model }}
+        {{- if $aiBedrock.model }}
         - name: MODEL
-          value: {{ .Values.ai.bedrock.model | quote }}
+          value: {{ $aiBedrock.model | quote }}
         {{- end }}
-        {{- if or .Values.ai.bedrock.token .Values.ai.bedrock.existingSecret }}
+        {{- if or ($aiBedrock.token) ($aiBedrock.existingSecret) }}
         - name: AWS_BEARER_TOKEN_BEDROCK
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.ai.bedrock.existingSecret | default (include "spyglass.secretName" .) }}
+              name: {{ $aiBedrock.existingSecret | default (include "spyglass.secretName" .) }}
               key: AWS_BEARER_TOKEN_BEDROCK
         {{- end }}
         # Spend guardrails (cloud providers only)
         - name: AI_BUDGET_DAILY_TOKENS
-          value: {{ .Values.ai.guardrails.dailyTokenBudget | quote }}
+          value: {{ $aiGuard.dailyTokenBudget | default 0 | int64 | quote }}
         - name: AI_BUDGET_MONTHLY_TOKENS
-          value: {{ .Values.ai.guardrails.monthlyTokenBudget | quote }}
+          value: {{ $aiGuard.monthlyTokenBudget | default 0 | int64 | quote }}
         - name: AI_RESERVE_TOKENS
-          value: {{ .Values.ai.guardrails.reserveTokens | quote }}
+          value: {{ $aiGuard.reserveTokens | default 0 | int64 | quote }}
         - name: AI_RATE_LIMIT_PER_MINUTE
-          value: {{ .Values.ai.guardrails.rateLimitPerMinute | quote }}
+          value: {{ $aiGuard.rateLimitPerMinute | default 0 | int64 | quote }}
         - name: AI_MAX_CONCURRENT_RUNS
-          value: {{ .Values.ai.guardrails.maxConcurrentRuns | quote }}
-        {{- if .Values.ai.guardrails.priceInPerMTok }}
+          value: {{ $aiGuard.maxConcurrentRuns | default 0 | int64 | quote }}
+        {{- if $aiGuard.priceInPerMTok }}
         - name: AI_PRICE_IN_PER_MTOK
-          value: {{ .Values.ai.guardrails.priceInPerMTok | quote }}
+          value: {{ $aiGuard.priceInPerMTok | quote }}
         {{- end }}
-        {{- if .Values.ai.guardrails.priceOutPerMTok }}
+        {{- if $aiGuard.priceOutPerMTok }}
         - name: AI_PRICE_OUT_PER_MTOK
-          value: {{ .Values.ai.guardrails.priceOutPerMTok | quote }}
+          value: {{ $aiGuard.priceOutPerMTok | quote }}
         {{- end }}
-        {{- if .Values.ai.allowCloudWithoutAuth }}
+        {{- if $ai.allowCloudWithoutAuth }}
         - name: AI_ALLOW_CLOUD_WITHOUT_AUTH
           value: "true"
         {{- end }}
         # Persistence (usage ledger + incident memory + settings)
-        {{- if .Values.ai.persistence.enabled }}
+        {{- if $aiPersist.enabled }}
         - name: AI_DATA_DIR
-          value: {{ .Values.ai.persistence.dataDir | quote }}
+          value: {{ $aiPersist.dataDir | default "/data/ai" | quote }}
         {{- end }}
         {{- if .Values.telemetryDisabled }}
         - name: TELEMETRY_DISABLED
@@ -229,19 +237,19 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
-        {{- if or .Values.ai.persistence.enabled .Values.extraVolumeMounts }}
+        {{- if or ($aiPersist.enabled) .Values.extraVolumeMounts }}
         volumeMounts:
-        {{- if .Values.ai.persistence.enabled }}
+        {{- if $aiPersist.enabled }}
         - name: ai-data
-          mountPath: {{ .Values.ai.persistence.dataDir | quote }}
+          mountPath: {{ $aiPersist.dataDir | default "/data/ai" | quote }}
         {{- end }}
         {{- with .Values.extraVolumeMounts }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- end }}
-      {{- if or .Values.ai.persistence.enabled .Values.extraVolumes }}
+      {{- if or ($aiPersist.enabled) .Values.extraVolumes }}
       volumes:
-      {{- if .Values.ai.persistence.enabled }}
+      {{- if $aiPersist.enabled }}
       - name: ai-data
         persistentVolumeClaim:
           claimName: {{ include "spyglass.aiPvcName" . }}

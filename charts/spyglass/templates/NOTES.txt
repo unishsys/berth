@@ -1,3 +1,5 @@
+{{- $ai := .Values.ai | default dict -}}
+{{- $aiPersist := $ai.persistence | default dict -}}
 Spyglass {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
 
 {{ if eq .Values.auth.mode "none" -}}
@@ -14,11 +16,11 @@ Auth: proxy-header mode, your upstream proxy must set {{ .Values.auth.proxyHeade
 License: {{ if or .Values.license.key .Values.license.existingSecret }}a license key is applied.{{ else }}Community tier (free, up to 10 nodes). Beyond the cap, changes are blocked until you start a trial or upgrade.{{ end }}
   Apply/renew a license:  helm upgrade {{ .Release.Name }} <chart> --reuse-values --set license.key=<KEY>
 
-AI SRE assistant: {{ .Values.ai.providers }}{{ if .Values.ai.persistence.enabled }} · ledger persisted at {{ .Values.ai.persistence.dataDir }}{{ else }} · ledger in-memory (set ai.persistence.enabled for durable usage/budgets){{ end }}
-{{- if and (regexMatch "anthropic|claude|bedrock" .Values.ai.providers) (eq .Values.auth.mode "none") (not .Values.ai.allowCloudWithoutAuth) }}
+AI SRE assistant: {{ $ai.providers | default "ollama" }}{{ if $aiPersist.enabled }} · ledger persisted at {{ $aiPersist.dataDir | default "/data/ai" }}{{ else }} · ledger in-memory (set ai.persistence.enabled for durable usage/budgets){{ end }}
+{{- if and (regexMatch "anthropic|claude|bedrock" ($ai.providers | default "ollama")) (eq .Values.auth.mode "none") (not $ai.allowCloudWithoutAuth) }}
   WARNING: Cloud AI providers are DISABLED because auth.mode=none (an anonymous caller could spend your key).
      Set auth.mode=token, or ai.allowCloudWithoutAuth=true on a trusted cluster. Local Ollama still works.
-{{- else if regexMatch "anthropic|claude|bedrock" .Values.ai.providers }}
+{{- else if regexMatch "anthropic|claude|bedrock" ($ai.providers | default "ollama") }}
   Cloud AI providers need an Enterprise license; on Community only local Ollama is offered.
 {{- end }}
 
