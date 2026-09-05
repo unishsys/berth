@@ -46,12 +46,14 @@ jobs:
       - uses: azure/setup-helm@v4
       - name: Helm lint
         run: helm lint charts/spyglass
+      - name: Security configuration tests
+        run: python3 scripts/test_chart.py
       - name: Template render (smoke test)
         run: helm template spyglass charts/spyglass >/dev/null
 
   publish:
     name: Package and push (OCI)
-    # Only publish on an actual release or a manual dispatch — plain chart
+    # Only publish on an actual release or a manual dispatch, plain chart
     # pushes/PRs just lint.
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs: lint

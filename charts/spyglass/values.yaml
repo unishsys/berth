@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: ghcr.io/unishsys/spyglass
@@ -22,12 +22,13 @@ service:
 
 # Authentication. Spyglass has full cluster read/write access, so the SECURE
 # default is `token`: an auth token is auto-generated (and kept stable across
-# upgrades) unless you supply one. Use `none` ONLY for throwaway/local clusters.
+# upgrades) unless you supply one. The chart rejects `none`; local binary development has an explicit loopback-only option.
 auth:
   mode: token # none | token | proxy-header
   token: "" # explicit bearer token; if empty in token mode, one is generated
   existingSecret: "" # Secret holding key AUTH_TOKEN (overrides .token)
   proxyHeader: X-Forwarded-User
+  proxyTrustedCIDRs: [] # direct proxy pod/subnet CIDRs only; never 0.0.0.0/0
 
 # Offline license. Empty = Community tier (free, up to 10 nodes). Paste a signed
 # license key here, or point at a Secret that holds a LICENSE_KEY key.
@@ -98,12 +99,12 @@ ai:
 
   # Spend guardrails for CLOUD providers only (this is YOUR provider bill; Spyglass
   # never meters or bills tokens). Token budgets are enforced BEFORE a run starts,
-  # with an in-flight reservation so concurrent chats can't collectively overspend.
+  # using estimated in-flight reservations. Actual usage can exceed the hold; use provider-side caps.
   # 0 = unlimited.
   guardrails:
     dailyTokenBudget: 0
     monthlyTokenBudget: 0
-    reserveTokens: 20000     # worst-case hold per in-flight cloud run
+    reserveTokens: 20000     # estimated hold per in-flight cloud run
     rateLimitPerMinute: 20   # per principal, all providers; 0 disables
     maxConcurrentRuns: 4     # across the deployment; 0 disables
     # Optional: what your provider charges per million tokens, so the usage ledger
@@ -111,26 +112,22 @@ ai:
     priceInPerMTok: ""
     priceOutPerMTok: ""
 
-  # With auth.mode=none, cloud providers are disabled so an anonymous caller can't
-  # spend your key. Set true ONLY on a trusted, isolated cluster to allow them anyway.
-  allowCloudWithoutAuth: false
+  # Raw diagnostic data may include credentials; keep off unless egress is approved.
+  allowRawDiagnostics: false # logs/describe may contain secrets; explicit AI egress consent
 
   # Persistence for the usage ledger + incident memory (embedded SQLite) and the
   # Settings-page overrides (including keys, written 0600). Without it these live
-  # in memory and are lost on restart. STRONGLY recommended with cloud providers so
+  # in memory and are lost on restart. Required for cloud providers so
   # budgets and the ledger survive restarts.
   #
-  # NOTE on replicas: the store is a per-pod SQLite file. With replicaCount > 1 and
-  # a ReadWriteOnce volume, only one pod can mount it. For a single shared ledger and
-  # budget, use a ReadWriteMany storage class, or run the dashboard with replicaCount: 1
-  # when you rely on budgets. Otherwise each replica keeps its own ledger and enforces
-  # budgets independently.
+  # SQLite WAL and in-process reservations require one replica and local block storage.
+  # Never use shared network storage (NFS/RWX). Back up the database consistently.
   persistence:
-    enabled: false
+    enabled: true
     dataDir: /data/ai
     size: 1Gi
     storageClass: ""            # "" = cluster default
-    accessMode: ReadWriteOnce   # ReadWriteMany for a shared ledger across replicas
+    accessMode: ReadWriteOnce   # local block volume only
     existingClaim: ""           # use a PVC you manage instead of creating one
 
 # Optional anonymous usage ping. Set true to disable.
@@ -240,7 +237,8 @@ revisionHistoryLimit: 3
 # Deployment update strategy. Default Helm/K8s rolling update; override to e.g.
 # {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}} for
 # zero-downtime upgrades.
-strategy: {}
+strategy:
+  type: Recreate
 
 # --- Probes (HTTP GET /ping) -------------------------------------------------
 # Only the timing fields, the path/port are fixed. Loosen these on slow
@@ -290,3 +288,8 @@ networkPolicy:
   enabled: false
   allowedNamespaces: []
 #    - ingress-nginx
+
+# Optional operator CRDs, explicit read-only allowlist; no wildcard grants.
+aiExtraReadRules: []
+# - apiGroups: ["postgresql.cnpg.io"]
+#   resources: ["clusters"]

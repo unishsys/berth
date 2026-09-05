@@ -1,5 +1,8 @@
 # Spyglass
 
+> September 2026 upgrade: [read the operations guide](docs/production-readiness.md). Authentication, ticket-based logs and single-writer storage require coordinated backend/chart upgrades.
+
+
 **Spyglass is a self-hosted Kubernetes dashboard** for observing and managing
 clusters from a single web UI. Observe nodes, pods, deployments, and services;
 stream pod logs live; create and edit resources with cluster-aware visual
@@ -113,10 +116,12 @@ point it at a cluster from your workstation, run it in `remotecluster` mode with
 your kubeconfig mounted:
 
 ```sh
-docker run --rm -p 8081:8081 \
+export AUTH_TOKEN="$(openssl rand -hex 32)"
+docker run --rm -p 127.0.0.1:8081:8081 \
+  -e AUTH_MODE=token -e AUTH_TOKEN -e BIND_ADDRESS=0.0.0.0 \
   -v "$HOME/.kube/config:/home/nonroot/.kube/config:ro" \
   ghcr.io/unishsys/spyglass:1.0.1 remotecluster
-# then open http://localhost:8081/  (AUTH_MODE defaults to none in this mode)
+# then open http://localhost:8081/  (AUTH_MODE defaults to token; configure AUTH_TOKEN with at least 32 random characters)
 ```
 
 Images are multi-arch (`linux/amd64`, `linux/arm64`), ship an SBOM + provenance,
@@ -157,7 +162,7 @@ Binaries are published for:
   Helm chart runs) or `remotecluster` (uses your local `~/.kube/config`).
 - **Authentication:** the Helm chart defaults to `token` mode and generates a
   stable token. Read it from the `spyglass-secrets` Secret (above). For a local
-  binary, auth defaults to `none`.
+  binary, auth defaults to `token`; explicit loopback-only development may use `none`.
 - **License:** paste your key (Helm `license.key`, or `LICENSE_KEY` env). Empty =
   Community tier. Verified offline; works in air-gapped clusters.
 - **Optional integrations** degrade gracefully when absent: metrics-server
@@ -194,7 +199,7 @@ flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 
 | Value | Default | Purpose |
 | --- | --- | --- |
-| `replicaCount` | `2` | Number of dashboard pods. |
+| `replicaCount` | `1` | Required single-writer deployment; higher values rejected. |
 | `nodeSelector` | `{}` | Pin pods to a node pool. |
 | `tolerations` | `[]` | Schedule onto tainted nodes (spot pools, GPU, control-plane). |
 | `affinity` | `{}` | Node/pod (anti-)affinity. |
@@ -251,14 +256,12 @@ an anonymous caller can never spend your key.
 | `ai.effort` / `ai.thinking` / `ai.maxTokens` | `high` / `adaptive` / `8192` | Shared Claude behaviour. |
 | `ai.guardrails.dailyTokenBudget` / `.monthlyTokenBudget` | `0` / `0` | Cloud token caps (0 = unlimited), enforced with an in-flight reservation. |
 | `ai.guardrails.rateLimitPerMinute` / `.maxConcurrentRuns` | `20` / `4` | Per-principal rate limit and concurrency cap. |
-| `ai.allowCloudWithoutAuth` | `false` | Allow cloud providers under `auth.mode=none` (trusted clusters only). |
+| `ai.allowRawDiagnostics` | `false` | Explicitly allow raw logs/descriptions to reach your model. |
 | `ai.persistence.enabled` / `.dataDir` / `.size` | `false` / `/data/ai` / `1Gi` | Persist the usage ledger, incident memory, and Settings overrides (SQLite PVC). |
 
 The rootfs is read-only, so the ledger needs a writable volume: enable
 `ai.persistence` (or leave it off to keep usage/memory in-memory). The store is a
-per-pod SQLite file, with `replicaCount > 1` and a `ReadWriteOnce` volume only one
-pod mounts it, so for one shared ledger/budget use a `ReadWriteMany` class or run a
-single replica. Most of this is also editable at runtime in **Settings → AI**
+single-process SQLite file. Use one replica with Recreate and a local RWO block volume. NFS/RWX and overlapping replicas are unsupported. Cloud providers require persistent storage. Most of this is also editable at runtime in **Settings → AI**
 (requires auth). Full reference: `https://spyglass.agrohi.com/how-ai-works/`.
 
 ### Recipes
@@ -277,17 +280,14 @@ podDisruptionBudget:
 ```
 (GKE spot uses `cloud.google.com/gke-spot=true:NoSchedule`; control-plane nodes use `node-role.kubernetes.io/control-plane:NoSchedule`.)
 
-**High availability across zones:**
+**Single-writer storage:**
 ```yaml
-replicaCount: 3
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: topology.kubernetes.io/zone
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        app: spyglass
-podDisruptionBudget: { enabled: true, minAvailable: 2 }
+replicaCount: 1
+strategy: { type: Recreate }
+ai:
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
 ```
 
 **Private / air-gapped registry:**

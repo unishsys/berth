@@ -1,0 +1,15 @@
+# Deployment and upgrade guide
+
+Spyglass is a single-cluster dashboard for trusted cluster administrators. All authenticated users have the same service-account powers, including reading/editing Secret YAML. Proxy identities support audit attribution; they do not implement per-user Kubernetes authorization. Restrict access accordingly and use TLS.
+
+The backend defaults to token authentication and requires at least 32 random characters. The chart generates a token unless you provide one/existing Secret. Proxy mode additionally requires `auth.proxyTrustedCIDRs` for actual socket peers. The proxy must strip/replace user identity headers after authentication; restrict direct access to those peers. Local `remotecluster` mode binds loopback by default; unauthenticated mode is only available there explicitly.
+
+Tokens are kept in the browser tab only (sessionStorage) and forgotten when the tab closes. Logs obtain a single-use 30-second path-bound ticket over authenticated HTTP, then use it in the WebSocket subprotocol. Upgrade backend and SPA together. Streams are bounded to 15 minutes, 16 connections per process and 20 pods per deployment stream. Redact authentication headers/subprotocols in edge logs and rotate older dashboard tokens that may have appeared in historical URL logs.
+
+Use exactly one replica, `strategy.type: Recreate`, and a local RWO/RWOP block volume. Chart persistence defaults on; storage class must be provisioned by your cluster. SQLite WAL, WebSocket tickets and AI reservations are not distributed. NFS/RWX or overlapping replicas are unsupported. Before upgrading an old multi-pod deployment, stop its writers and back up the database consistently; review effective Helm values instead of blindly reusing old overrides. `/readyz` governs traffic readiness; `/ping` is liveness.
+
+Cloud models require Enterprise, authentication and a persistent `AI_DATA_DIR`; store failures disable paid requests. Token reservations are estimates, not guaranteed provider bill caps. Configure provider-side spending limits and alerts, and reconcile unknown usage after interrupted requests. Log/description access by AI is disabled unless `ai.allowRawDiagnostics: true` is explicitly selected; data can contain secrets. Generic AI resource reads exclude Secret/ConfigMap data and arbitrary specs. Pattern filtering cannot guarantee anonymization. Local models also receive whatever diagnostic data you enable.
+
+The chart supplies built-in storage/PDB read permissions. Grant optional operator CRDs narrowly through `aiExtraReadRules`; missing permissions/API coverage must not be treated as proof of healthy resources.
+
+Before a public rollout, validate fresh install, upgrade, rollback, auth/proxy rejection, actual browser log streaming, optional API failures, representative load, SIGTERM, and consistent database backup/restore on an isolated staging cluster. Confirm support and incident contacts. Multi-tenant access and high-availability deployments are outside the supported release scope.

@@ -59,10 +59,8 @@ rules:
 - apiGroups: [""]
   resources: ["events"]
   verbs: ["get", "list", "watch"]
-# Secrets access is sensitive. The app lists secret metadata and the DATA KEY
-# NAMES (secret VALUES are masked in the API layer and never leave the cluster),
-# and now also supports editing/deleting secrets via the generic object API —
-# write access (update/patch/delete) is therefore included here. No watch.
+# Secret values are available to authenticated administrators through the YAML editor.
+# AI tools deny Secret and ConfigMap content independently.
 - apiGroups: [""]
   resources: ["secrets"]
   verbs: ["get", "list", "create", "update", "patch", "delete"]
@@ -89,7 +87,7 @@ rules:
 # absent.
 #
 # Certificates are CREATED/edited/deleted by the Expose-an-app flow, the "Create
-# certificate" dialog, and the generic YAML editor — so they need full write.
+# certificate" dialog, and the generic YAML editor, so they need full write.
 # Issuers/ClusterIssuers stay read-only (the UI only picks an existing one), as
 # do external-dns DNSEndpoints.
 - apiGroups: ["cert-manager.io"]
@@ -107,6 +105,20 @@ rules:
 - apiGroups: ["metrics.k8s.io"]
   resources: ["nodes"]
   verbs: ["get", "list"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["persistentvolumes", "persistentvolumeclaims"]
+  verbs: ["get", "list"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list"]
+{{- range .Values.aiExtraReadRules }}
+- apiGroups: {{ toJson .apiGroups }}
+  resources: {{ toJson .resources }}
+  verbs: ["get", "list"]
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

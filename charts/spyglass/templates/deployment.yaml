@@ -1,3 +1,8 @@
+{{- if and .Values.ai.persistence.enabled (not (has .Values.ai.persistence.accessMode (list "ReadWriteOnce" "ReadWriteOncePod"))) }}{{ fail "AI SQLite storage requires a local RWO/RWOP block volume; shared RWX is unsupported" }}{{ end -}}
+{{- if ne .Values.strategy.type "Recreate" }}{{ fail "strategy.type must be Recreate to avoid overlapping SQLite writers" }}{{ end -}}
+{{- if ne (int .Values.replicaCount) 1 }}{{ fail "Spyglass requires replicaCount=1: SQLite and WebSocket tickets are process-local" }}{{ end -}}
+{{- if not (has .Values.auth.mode (list "token" "proxy-header")) }}{{ fail "in-cluster authentication must be token or proxy-header" }}{{ end -}}
+{{- if and (eq .Values.auth.mode "proxy-header") (empty .Values.auth.proxyTrustedCIDRs) }}{{ fail "proxy-header requires auth.proxyTrustedCIDRs" }}{{ end -}}
 {{- $ai := .Values.ai | default dict -}}
 {{- $aiOllama := $ai.ollama | default dict -}}
 {{- $aiAnthropic := $ai.anthropic | default dict -}}
@@ -86,6 +91,8 @@ spec:
         - name: AUTH_MODE
           value: {{ .Values.auth.mode | quote }}
         {{- if eq .Values.auth.mode "proxy-header" }}
+        - name: AUTH_PROXY_TRUSTED_CIDRS
+          value: {{ join "," .Values.auth.proxyTrustedCIDRs | quote }}
         - name: AUTH_PROXY_HEADER
           value: {{ .Values.auth.proxyHeader | quote }}
         {{- end }}
@@ -186,8 +193,8 @@ spec:
         - name: AI_PRICE_OUT_PER_MTOK
           value: {{ $aiGuard.priceOutPerMTok | quote }}
         {{- end }}
-        {{- if $ai.allowCloudWithoutAuth }}
-        - name: AI_ALLOW_CLOUD_WITHOUT_AUTH
+        {{- if $ai.allowRawDiagnostics }}
+        - name: AI_ALLOW_RAW_DIAGNOSTICS
           value: "true"
         {{- end }}
         # Persistence (usage ledger + incident memory + settings)
@@ -219,7 +226,7 @@ spec:
         {{- end }}
         readinessProbe:
           httpGet:
-            path: /ping
+            path: /readyz
             port: {{ .Values.service.port }}
           {{- with .Values.readinessProbe }}
           {{- toYaml . | nindent 10 }}
