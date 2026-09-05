@@ -29,12 +29,13 @@ with no key.** *Making changes* (create/edit/delete) requires a license — a fr
 Community key, or a trial/paid key. Beyond your node cap, changes pause until you
 upgrade; the dashboard always stays fully readable.
 
-| Edition | Node limit | How to get it |
+| Edition | Limits | How to get it |
 | --- | --- | --- |
-| **Community** | up to 10 nodes | free — [create an account](https://spyglass.sh) for a free key |
-| **Trial** | unlimited | free for 14 days — [start a trial](https://spyglass.sh/pricing) |
-| **Pro** | up to 50 nodes | self-serve subscription |
-| **Enterprise** | unlimited / multi-cluster | + SSO, RBAC, audit, support — [contact us](https://spyglass.sh/pricing) |
+| **Community** | up to 10 nodes, single cluster | free — [create an account](https://spyglass.sh) for a key |
+| **Enterprise** | unlimited nodes, per cluster | subscription with a 14-day trial — [see pricing](https://spyglass.sh/pricing) |
+
+> SSO/OIDC, RBAC, audit log, multi-cluster, and private agentic AI are the
+> Enterprise roadmap — [design partners welcome](https://spyglass.sh/pricing).
 
 ## 1. Register & get a license key
 
@@ -162,7 +163,8 @@ Binaries are published for:
   Community tier. Verified offline; works in air-gapped clusters.
 - **Optional integrations** degrade gracefully when absent: metrics-server
   (CPU/memory), Gateway API, cert-manager / external-dns (the domain → DNS → TLS
-  → gateway chain), and Ollama (the in-app AI assistant).
+  → gateway chain), and the in-app AI SRE assistant (local Ollama, or Claude on
+  your own key).
 
 ### Common configuration
 
@@ -175,7 +177,10 @@ Set these via Helm (`--set`) or as environment variables on the container:
 | `license.key` / `LICENSE_KEY` | _(unset)_ | Signed license token. Empty = Community. |
 | `ingress.*` | disabled | Expose the UI via an Ingress + TLS. |
 | `telemetryDisabled` / `TELEMETRY_DISABLED` | `false` | Disable the optional anonymous usage ping. |
-| `OLLAMA_URL` | `http://localhost:11434` | Optional AI (Ollama) endpoint. |
+| `ai.providers` / `AI_PROVIDERS` | `ollama` | Providers to offer: `ollama`, `anthropic`, `claude` (Bedrock). |
+| `ai.ollama.host` / `OLLAMA_HOST` | `http://ollama.ollama.svc:11434` | Local Ollama endpoint. |
+| `ai.anthropic.apiKey` / `ANTHROPIC_API_KEY` | _(unset)_ | Claude via the Anthropic API (Enterprise). |
+| `ai.persistence.enabled` | `false` | Persist the AI usage ledger + incident memory (SQLite). |
 
 See `helm show values oci://ghcr.io/unishsys/charts/spyglass` for the full list.
 
@@ -225,6 +230,38 @@ flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 | `extraVolumes` / `extraVolumeMounts` | `[]` | Mount e.g. a corporate CA bundle (rootfs is read-only). |
 | `extraEnv` | `[]` | Additional environment variables. |
 
+### AI SRE assistant
+
+The dashboard has a built-in, **read-only** AI SRE that reasons over your live
+cluster. You bring the model and the key — Spyglass calls the provider directly
+from inside the cluster and never proxies, meters, or bills tokens. Local Ollama
+is available on every tier; Claude (Anthropic API or Amazon Bedrock, on your own
+key) needs an Enterprise license **and** dashboard auth (`auth.mode != none`), so
+an anonymous caller can never spend your key.
+
+| Value | Default | Purpose |
+| --- | --- | --- |
+| `ai.providers` | `ollama` | Comma-separated: `ollama`, `anthropic`, `claude` (alias `bedrock`). |
+| `ai.defaultProvider` | _(first listed)_ | Provider used when a chat names none. |
+| `ai.ollama.host` / `ai.ollama.model` | in-cluster svc / `sabbir/spyglass-sre` | Local model endpoint and tag. |
+| `ai.ollama.numCtx` | `16384` | Ollama context window — do not lower (smaller loops the model). |
+| `ai.anthropic.apiKey` / `.existingSecret` | _(unset)_ | Anthropic API key inline or from a Secret (`ANTHROPIC_API_KEY`). |
+| `ai.anthropic.model` | `claude-opus-5` | e.g. `claude-sonnet-5` for lower cost. |
+| `ai.bedrock.token` / `.existingSecret` | _(unset)_ | Bedrock bearer token; empty uses the pod's AWS credential chain. |
+| `ai.bedrock.region` / `.model` | `us-east-1` / _(backend default)_ | Bedrock region and model id. |
+| `ai.effort` / `ai.thinking` / `ai.maxTokens` | `high` / `adaptive` / `8192` | Shared Claude behaviour. |
+| `ai.guardrails.dailyTokenBudget` / `.monthlyTokenBudget` | `0` / `0` | Cloud token caps (0 = unlimited), enforced with an in-flight reservation. |
+| `ai.guardrails.rateLimitPerMinute` / `.maxConcurrentRuns` | `20` / `4` | Per-principal rate limit and concurrency cap. |
+| `ai.allowCloudWithoutAuth` | `false` | Allow cloud providers under `auth.mode=none` (trusted clusters only). |
+| `ai.persistence.enabled` / `.dataDir` / `.size` | `false` / `/data/ai` / `1Gi` | Persist the usage ledger, incident memory, and Settings overrides (SQLite PVC). |
+
+The rootfs is read-only, so the ledger needs a writable volume: enable
+`ai.persistence` (or leave it off to keep usage/memory in-memory). The store is a
+per-pod SQLite file — with `replicaCount > 1` and a `ReadWriteOnce` volume only one
+pod mounts it, so for one shared ledger/budget use a `ReadWriteMany` class or run a
+single replica. Most of this is also editable at runtime in **Settings → AI**
+(requires auth). Full reference: `https://spyglass.agrohi.com/how-ai-works/`.
+
 ### Recipes
 
 **Schedule onto a tainted spot pool (AKS) and survive reclamation:**
@@ -260,6 +297,34 @@ image:
   repository: registry.internal/spyglass
 imagePullSecrets:
   - name: internal-registry
+```
+
+**AI SRE with Claude on your own Anthropic key (Enterprise), budgeted & persisted:**
+```yaml
+license:
+  key: <ENTERPRISE_KEY>            # or license.existingSecret
+ai:
+  providers: "anthropic,ollama"    # cloud + local fallback
+  defaultProvider: anthropic
+  anthropic:
+    existingSecret: spyglass-anthropic   # Secret with key ANTHROPIC_API_KEY
+    model: claude-opus-5
+  guardrails:
+    dailyTokenBudget: 2000000
+    monthlyTokenBudget: 20000000
+  persistence:
+    enabled: true                  # durable usage ledger + incident memory
+    size: 1Gi
+```
+(auth.mode must not be `none` for cloud providers to be offered.)
+
+**Fully local / air-gapped AI (Community-friendly, nothing leaves the cluster):**
+```yaml
+ai:
+  providers: "ollama"
+  ollama:
+    host: http://ollama.ollama.svc:11434
+    model: sabbir/spyglass-sre
 ```
 
 **OpenShift (let the SCC assign UIDs):** Helm *merges* maps, so you must

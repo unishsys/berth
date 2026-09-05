@@ -1,0 +1,26 @@
+{{- /*
+PersistentVolumeClaim for the AI usage ledger + incident memory (embedded SQLite)
+and the Settings-page overrides. Created only when ai.persistence is enabled and
+no existingClaim is supplied. See values.yaml for the multi-replica caveat.
+*/}}
+{{- if and .Values.ai.persistence.enabled (not .Values.ai.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "spyglass.aiPvcName" . }}
+  labels:
+    {{- include "spyglass.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.ai.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.ai.persistence.size | quote }}
+  {{- if .Values.ai.persistence.storageClass }}
+  storageClassName: {{ .Values.ai.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}

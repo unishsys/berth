@@ -99,17 +99,51 @@ spec:
         {{- end }}
         - name: UPGRADE_URL
           value: {{ .Values.upgradeUrl | quote }}
-        # --- AI assistant ---
+        # --- AI SRE assistant (bring-your-own-key; all tools read-only) ---
         - name: AI_PROVIDERS
           value: {{ .Values.ai.providers | quote }}
+        {{- if .Values.ai.defaultProvider }}
         - name: AI_PROVIDER
           value: {{ .Values.ai.defaultProvider | quote }}
+        {{- end }}
+        - name: EFFORT
+          value: {{ .Values.ai.effort | quote }}
+        - name: AI_THINKING
+          value: {{ .Values.ai.thinking | quote }}
+        - name: MAX_TOKENS
+          value: {{ .Values.ai.maxTokens | quote }}
+        - name: AI_MAX_TOOL_ITERATIONS
+          value: {{ .Values.ai.maxToolIterations | quote }}
+        - name: AI_RUN_TIMEOUT_SECONDS
+          value: {{ .Values.ai.runTimeoutSeconds | quote }}
+        - name: AI_SNAPSHOT_INTERVAL_SECONDS
+          value: {{ .Values.ai.snapshotIntervalSeconds | quote }}
+        # Ollama (local, unmetered)
         - name: OLLAMA_HOST
           value: {{ .Values.ai.ollama.host | quote }}
         - name: OLLAMA_MODEL
           value: {{ .Values.ai.ollama.model | quote }}
         - name: OLLAMA_NUM_CTX
           value: {{ .Values.ai.ollama.numCtx | quote }}
+        - name: OLLAMA_MAX_TOKENS
+          value: {{ .Values.ai.ollama.maxTokens | quote }}
+        # Claude via the Anthropic API (Enterprise)
+        {{- if .Values.ai.anthropic.model }}
+        - name: ANTHROPIC_MODEL
+          value: {{ .Values.ai.anthropic.model | quote }}
+        {{- end }}
+        {{- if .Values.ai.anthropic.baseUrl }}
+        - name: ANTHROPIC_BASE_URL
+          value: {{ .Values.ai.anthropic.baseUrl | quote }}
+        {{- end }}
+        {{- if or .Values.ai.anthropic.apiKey .Values.ai.anthropic.existingSecret }}
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ai.anthropic.existingSecret | default (include "spyglass.secretName" .) }}
+              key: ANTHROPIC_API_KEY
+        {{- end }}
+        # Claude via Amazon Bedrock (Enterprise)
         {{- if .Values.ai.bedrock.region }}
         - name: AWS_REGION
           value: {{ .Values.ai.bedrock.region | quote }}
@@ -125,9 +159,33 @@ spec:
               name: {{ .Values.ai.bedrock.existingSecret | default (include "spyglass.secretName" .) }}
               key: AWS_BEARER_TOKEN_BEDROCK
         {{- end }}
-        {{- if .Values.ai.configPath }}
-        - name: AI_CONFIG_PATH
-          value: {{ .Values.ai.configPath | quote }}
+        # Spend guardrails (cloud providers only)
+        - name: AI_BUDGET_DAILY_TOKENS
+          value: {{ .Values.ai.guardrails.dailyTokenBudget | quote }}
+        - name: AI_BUDGET_MONTHLY_TOKENS
+          value: {{ .Values.ai.guardrails.monthlyTokenBudget | quote }}
+        - name: AI_RESERVE_TOKENS
+          value: {{ .Values.ai.guardrails.reserveTokens | quote }}
+        - name: AI_RATE_LIMIT_PER_MINUTE
+          value: {{ .Values.ai.guardrails.rateLimitPerMinute | quote }}
+        - name: AI_MAX_CONCURRENT_RUNS
+          value: {{ .Values.ai.guardrails.maxConcurrentRuns | quote }}
+        {{- if .Values.ai.guardrails.priceInPerMTok }}
+        - name: AI_PRICE_IN_PER_MTOK
+          value: {{ .Values.ai.guardrails.priceInPerMTok | quote }}
+        {{- end }}
+        {{- if .Values.ai.guardrails.priceOutPerMTok }}
+        - name: AI_PRICE_OUT_PER_MTOK
+          value: {{ .Values.ai.guardrails.priceOutPerMTok | quote }}
+        {{- end }}
+        {{- if .Values.ai.allowCloudWithoutAuth }}
+        - name: AI_ALLOW_CLOUD_WITHOUT_AUTH
+          value: "true"
+        {{- end }}
+        # Persistence (usage ledger + incident memory + settings)
+        {{- if .Values.ai.persistence.enabled }}
+        - name: AI_DATA_DIR
+          value: {{ .Values.ai.persistence.dataDir | quote }}
         {{- end }}
         {{- if .Values.telemetryDisabled }}
         - name: TELEMETRY_DISABLED
@@ -171,11 +229,24 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
-        {{- with .Values.extraVolumeMounts }}
+        {{- if or .Values.ai.persistence.enabled .Values.extraVolumeMounts }}
         volumeMounts:
+        {{- if .Values.ai.persistence.enabled }}
+        - name: ai-data
+          mountPath: {{ .Values.ai.persistence.dataDir | quote }}
+        {{- end }}
+        {{- with .Values.extraVolumeMounts }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.extraVolumes }}
+        {{- end }}
+      {{- if or .Values.ai.persistence.enabled .Values.extraVolumes }}
       volumes:
+      {{- if .Values.ai.persistence.enabled }}
+      - name: ai-data
+        persistentVolumeClaim:
+          claimName: {{ include "spyglass.aiPvcName" . }}
+      {{- end }}
+      {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}

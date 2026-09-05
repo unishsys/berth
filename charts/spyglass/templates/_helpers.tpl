@@ -34,3 +34,10 @@ Name of the chart-managed Secret that holds AUTH_TOKEN and/or LICENSE_KEY.
 {{- define "spyglass.secretName" -}}
 spyglass-secrets
 {{- end -}}
+
+{{/*
+Name of the PVC backing the AI data dir (ledger + memory + settings).
+*/}}
+{{- define "spyglass.aiPvcName" -}}
+{{ .Values.ai.persistence.existingClaim | default "spyglass-ai-data" }}
+{{- end -}}

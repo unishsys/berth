@@ -38,15 +38,36 @@ license:
 # Where the in-app "start a trial / upgrade" prompts link to.
 upgradeUrl: https://spyglass.sh/pricing
 
-# AI assistant. Provider-pluggable and runs IN-PROCESS in the dashboard (no
-# separate service). Ollama is local/in-cluster and unmetered; Claude runs on
-# Amazon Bedrock (metered) with your own API key. Operators can also change most
-# of this at runtime from the dashboard's Settings → AI page (requires auth.mode
-# != none). See the AI configuration docs.
+# AI SRE assistant. Provider-pluggable and runs IN-PROCESS in the dashboard (no
+# separate service, no Spyglass-hosted endpoint). You bring the model and the
+# key: the dashboard calls the provider directly from inside your cluster with
+# credentials you supply. Every tool the agent has is READ-ONLY — it inspects
+# the cluster and proposes fixes, it never applies changes.
+#
+# Providers:
+#   ollama     local model on your own compute (Community + Enterprise)
+#   anthropic  Claude via the Anthropic API with your key (Enterprise)
+#   claude     Claude via Amazon Bedrock with your key (Enterprise; alias: bedrock)
+#
+# Cloud providers (anthropic, claude) are offered only when the dashboard is
+# authenticated (auth.mode != none) AND an Enterprise license is present. With
+# auth.mode=none or on Community, only local Ollama is offered — an anonymous
+# caller can never spend your key. Most of this is also editable at runtime from
+# the dashboard's Settings → AI page (requires auth.mode != none).
 ai:
-  # Which providers to enable and the default, e.g. "ollama" or "ollama,claude".
+  # Which providers to build/offer, comma-separated, and the default when a chat
+  # names none (empty defaultProvider = first in the list).
   providers: "ollama"
-  defaultProvider: "ollama"
+  defaultProvider: ""
+
+  # Shared model behaviour for the Claude providers.
+  effort: "high"        # low | medium | high | xhigh | max
+  thinking: "adaptive"  # adaptive | off (off for models that reject the param)
+  maxTokens: 8192        # max tokens per model reply
+  maxToolIterations: 8   # model round-trips per run
+  runTimeoutSeconds: 180 # hard wall-clock bound on one run (240 for slow local models)
+  snapshotIntervalSeconds: 25
+
   # Ollama (local model). Point host at an in-cluster Ollama service. The default
   # model is the tuned, published Spyglass SRE model.
   ollama:
@@ -55,17 +76,62 @@ ai:
     # Context window. Ollama's own default (4096) is too small for the SRE tools
     # and makes the model loop/derail; keep this at 16384+.
     numCtx: 16384
-  # Claude via Amazon Bedrock (optional; enable by adding "claude" to providers).
-  # Provide the Bedrock bearer token inline (stored in the chart Secret) or via an
-  # existing Secret with key AWS_BEARER_TOKEN_BEDROCK.
+    maxTokens: 8192
+
+  # Claude via the Anthropic API (direct, bring-your-own-key). Enterprise.
+  # Provide the key inline (stored in the chart Secret) or via an existing Secret
+  # with key ANTHROPIC_API_KEY.
+  anthropic:
+    apiKey: ""
+    existingSecret: ""
+    model: "claude-opus-5"   # or claude-sonnet-5 for lower cost
+    baseUrl: ""              # optional gateway/proxy
+
+  # Claude via Amazon Bedrock. Enterprise. Provide a Bedrock bearer token inline
+  # or via an existing Secret with key AWS_BEARER_TOKEN_BEDROCK; leave both empty
+  # to use the pod's AWS credential chain (IRSA / workload identity).
   bedrock:
     token: ""
     existingSecret: ""
     region: "us-east-1"
     model: "" # empty = backend default (anthropic.claude-opus-4-8)
-  # Persist Settings-page changes across restarts. Set to a path on a mounted
-  # volume (e.g. /data/ai-config.json); empty = changes are live-only.
-  configPath: ""
+
+  # Spend guardrails for CLOUD providers only (this is YOUR provider bill; Spyglass
+  # never meters or bills tokens). Token budgets are enforced BEFORE a run starts,
+  # with an in-flight reservation so concurrent chats can't collectively overspend.
+  # 0 = unlimited.
+  guardrails:
+    dailyTokenBudget: 0
+    monthlyTokenBudget: 0
+    reserveTokens: 20000     # worst-case hold per in-flight cloud run
+    rateLimitPerMinute: 20   # per principal, all providers; 0 disables
+    maxConcurrentRuns: 4     # across the deployment; 0 disables
+    # Optional: what your provider charges per million tokens, so the usage ledger
+    # can show an ESTIMATED cost. Empty = built-in list prices for known Claude models.
+    priceInPerMTok: ""
+    priceOutPerMTok: ""
+
+  # With auth.mode=none, cloud providers are disabled so an anonymous caller can't
+  # spend your key. Set true ONLY on a trusted, isolated cluster to allow them anyway.
+  allowCloudWithoutAuth: false
+
+  # Persistence for the usage ledger + incident memory (embedded SQLite) and the
+  # Settings-page overrides (including keys, written 0600). Without it these live
+  # in memory and are lost on restart. STRONGLY recommended with cloud providers so
+  # budgets and the ledger survive restarts.
+  #
+  # NOTE on replicas: the store is a per-pod SQLite file. With replicaCount > 1 and
+  # a ReadWriteOnce volume, only one pod can mount it. For a single shared ledger and
+  # budget, use a ReadWriteMany storage class, or run the dashboard with replicaCount: 1
+  # when you rely on budgets. Otherwise each replica keeps its own ledger and enforces
+  # budgets independently.
+  persistence:
+    enabled: false
+    dataDir: /data/ai
+    size: 1Gi
+    storageClass: ""            # "" = cluster default
+    accessMode: ReadWriteOnce   # ReadWriteMany for a shared ledger across replicas
+    existingClaim: ""           # use a PVC you manage instead of creating one
 
 # Optional anonymous usage ping. Set true to disable.
 telemetryDisabled: false
