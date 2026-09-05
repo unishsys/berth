@@ -16,7 +16,6 @@ This repository is the **public distribution** for Spyglass, the Helm chart,
 release binaries, and container image live here. The source is not public.
 
 - Website & sign-up: **https://spyglass.agrohi.com**
-- Pricing & trials: **https://spyglass.agrohi.com/pricing/**
 - Container image: `ghcr.io/unishsys/spyglass`
 - Helm chart (OCI): `oci://ghcr.io/unishsys/charts/spyglass`
 
