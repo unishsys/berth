@@ -3,8 +3,8 @@ name: berth
 description: Berth, a user-friendly web dashboard for your Kubernetes cluster.
 type: application
 # Chart version and the app/image version it deploys. Bump together on release.
-version: 0.4.0
-appVersion: "0.4.0"
+version: 0.4.1
+appVersion: "0.4.1"
 home: https://berth.agrohi.com
 sources:
   - https://github.com/unishsys/berth
