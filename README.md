@@ -1,9 +1,9 @@
-# Spyglass
+# Berth
 
 > September 2026 upgrade: [read the operations guide](docs/production-readiness.md). Authentication, ticket-based logs and single-writer storage require coordinated backend/chart upgrades.
 
 
-**Spyglass is a self-hosted Kubernetes dashboard** for observing and managing
+**Berth is a self-hosted Kubernetes dashboard** for observing and managing
 clusters from a single web UI. Observe nodes, pods, deployments, and services;
 stream pod logs live; create and edit resources with cluster-aware visual
 builders; expose an app end-to-end (Deployment → Service → Certificate → Gateway
@@ -11,42 +11,42 @@ builders; expose an app end-to-end (Deployment → Service → Certificate → G
 and capacity. The whole app ships as **one container**, a Vue SPA embedded in a
 small Go binary that runs inside your cluster.
 
-> Spyglass is proprietary, commercial software. See the [EULA](LICENSE). It is
+> Berth is proprietary, commercial software. See the [EULA](LICENSE). It is
 > **freemium**: free for small clusters, with paid tiers for larger ones, and
 > it always verifies its license **offline** (no phone-home).
 
-This repository is the **public distribution** for Spyglass, the Helm chart,
+This repository is the **public distribution** for Berth, the Helm chart,
 release binaries, and container image live here. The source is not public.
 
-- Website & sign-up: **https://spyglass.agrohi.com**
-- Container image: `ghcr.io/unishsys/spyglass`
-- Helm chart (OCI): `oci://ghcr.io/unishsys/charts/spyglass`
+- Website & sign-up: **https://berth.agrohi.com**
+- Container image: `ghcr.io/unishsys/berth`
+- Helm chart (OCI): `oci://ghcr.io/unishsys/charts/berth`
 
 ---
 
 ## Editions
 
-Spyglass is gated by **cluster size (node count)**. **Viewing is always free,
+Berth is gated by **cluster size (node count)**. **Viewing is always free,
 with no key.** *Making changes* (create/edit/delete) requires a license, a free
 Community key, or a trial/paid key. Beyond your node cap, changes pause until you
 upgrade; the dashboard always stays fully readable.
 
 | Edition | Limits | How to get it |
 | --- | --- | --- |
-| **Community** | up to 10 nodes, single cluster | free, [create an account](https://spyglass.agrohi.com) for a key |
-| **Enterprise** | unlimited nodes, per cluster | subscription with a 14-day trial, [see pricing](https://spyglass.agrohi.com/pricing/) |
+| **Community** | up to 10 nodes, single cluster | free, [create an account](https://berth.agrohi.com) for a key |
+| **Enterprise** | unlimited nodes, per cluster | subscription with a 14-day trial, [see pricing](https://berth.agrohi.com/pricing/) |
 
 > SSO/OIDC, RBAC, audit log, multi-cluster, and private agentic AI are the
-> Enterprise roadmap, [design partners welcome](https://spyglass.agrohi.com/pricing/).
+> Enterprise roadmap, [design partners welcome](https://berth.agrohi.com/pricing/).
 
 ## 1. Register & get a license key
 
-1. Create a free account at **https://spyglass.agrohi.com**. A **Community** key is
+1. Create a free account at **https://berth.agrohi.com**. A **Community** key is
    issued to you automatically.
-2. For unlimited evaluation, [start a 14-day trial](https://spyglass.agrohi.com/pricing/);
+2. For unlimited evaluation, [start a 14-day trial](https://berth.agrohi.com/pricing/);
    to subscribe, pick a plan at checkout.
 3. Your current key (and a personalized install guide) is always available on
-   your **dashboard** at https://spyglass.agrohi.com. Keys are renewed/extended
+   your **dashboard** at https://berth.agrohi.com. Keys are renewed/extended
    automatically while your subscription is active.
 
 You can install and **view** your cluster without any key, you only need one to
@@ -61,51 +61,51 @@ The chart is published as an **OCI artifact** on GHCR. Helm 3.8+ is required.
 ```sh
 # Installs the latest stable release. Defaults to secure token auth and
 # generates an auth token for you.
-helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass \
-  --namespace spyglass --create-namespace
+helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth \
+  --namespace berth --create-namespace
 ```
 
 Pin a specific version (recommended for production), or install a pre-release:
 
 ```sh
-helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass \
-  --version 1.0.1 --namespace spyglass --create-namespace
+helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth \
+  --version 1.0.1 --namespace berth --create-namespace
 
 # pre-releases (e.g. betas) must be requested by exact version:
-helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass \
-  --version 1.0.0-beta --namespace spyglass --create-namespace
+helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth \
+  --version 1.0.0-beta --namespace berth --create-namespace
 ```
 
 Read your auth token and reach the UI:
 
 ```sh
-kubectl -n spyglass get secret spyglass-secrets -o jsonpath='{.data.AUTH_TOKEN}' | base64 -d ; echo
-kubectl -n spyglass port-forward svc/spyglass 8081:8081   # then open http://localhost:8081/
+kubectl -n berth get secret berth-secrets -o jsonpath='{.data.AUTH_TOKEN}' | base64 -d ; echo
+kubectl -n berth port-forward svc/berth 8081:8081   # then open http://localhost:8081/
 ```
 
 To expose it publicly, enable the Ingress and TLS:
 
 ```sh
-helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass --reuse-values \
+helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth --reuse-values \
   --set ingress.enabled=true --set ingress.className=nginx \
-  --set ingress.host=spyglass.example.com \
-  --set ingress.tls.enabled=true --set ingress.tls.secretName=spyglass-tls
+  --set ingress.host=berth.example.com \
+  --set ingress.tls.enabled=true --set ingress.tls.secretName=berth-tls
 ```
 
 **Apply your license:**
 
 ```sh
-helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass --reuse-values \
+helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth --reuse-values \
   --set license.key='<YOUR_KEY>'
 # or reference a Secret that holds a LICENSE_KEY key:
-helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass --reuse-values \
+helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth --reuse-values \
   --set license.existingSecret=my-license
 ```
 
 The current tier, trial countdown, and node usage are shown in the dashboard's
 license banner.
 
-> **Security:** Spyglass has cluster-wide access, treat dashboard access as
+> **Security:** Berth has cluster-wide access, treat dashboard access as
 > cluster access. Don't run `auth.mode=none` on shared/exposed clusters, and
 > serve it over HTTPS.
 
@@ -120,7 +120,7 @@ export AUTH_TOKEN="$(openssl rand -hex 32)"
 docker run --rm -p 127.0.0.1:8081:8081 \
   -e AUTH_MODE=token -e AUTH_TOKEN -e BIND_ADDRESS=0.0.0.0 \
   -v "$HOME/.kube/config:/home/nonroot/.kube/config:ro" \
-  ghcr.io/unishsys/spyglass:1.0.1 remotecluster
+  ghcr.io/unishsys/berth:1.0.1 remotecluster
 # then open http://localhost:8081/  (AUTH_MODE defaults to token; configure AUTH_TOKEN with at least 32 random characters)
 ```
 
@@ -128,7 +128,7 @@ Images are multi-arch (`linux/amd64`, `linux/arm64`), ship an SBOM + provenance,
 and are **cosign-signed** (keyless). Verify:
 
 ```sh
-cosign verify ghcr.io/unishsys/spyglass:1.0.1 \
+cosign verify ghcr.io/unishsys/berth:1.0.1 \
   --certificate-identity-regexp 'https://github.com/unishsys/.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -136,16 +136,16 @@ cosign verify ghcr.io/unishsys/spyglass:1.0.1 \
 ### Standalone binary
 
 Download the binary for your OS/arch from the
-[latest release](https://github.com/unishsys/spyglass/releases/latest), verify it
+[latest release](https://github.com/unishsys/berth/releases/latest), verify it
 against `SHA256SUMS`, then run it against your kubeconfig:
 
 ```sh
 # macOS (Apple Silicon) example
-curl -sSLO https://github.com/unishsys/spyglass/releases/download/v1.0.1/spyglass-darwin-arm64
-curl -sSLO https://github.com/unishsys/spyglass/releases/download/v1.0.1/SHA256SUMS
+curl -sSLO https://github.com/unishsys/berth/releases/download/v1.0.1/berth-darwin-arm64
+curl -sSLO https://github.com/unishsys/berth/releases/download/v1.0.1/SHA256SUMS
 shasum -a 256 -c SHA256SUMS --ignore-missing   # verify
-chmod +x spyglass-darwin-arm64
-./spyglass-darwin-arm64 remotecluster           # serves the UI on :8081
+chmod +x berth-darwin-arm64
+./berth-darwin-arm64 remotecluster           # serves the UI on :8081
 ```
 
 Binaries are published for:
@@ -161,7 +161,7 @@ Binaries are published for:
 - **Run modes:** `incluster` (inside a pod, uses the ServiceAccount, what the
   Helm chart runs) or `remotecluster` (uses your local `~/.kube/config`).
 - **Authentication:** the Helm chart defaults to `token` mode and generates a
-  stable token. Read it from the `spyglass-secrets` Secret (above). For a local
+  stable token. Read it from the `berth-secrets` Secret (above). For a local
   binary, auth defaults to `token`; explicit loopback-only development may use `none`.
 - **License:** paste your key (Helm `license.key`, or `LICENSE_KEY` env). Empty =
   Community tier. Verified offline; works in air-gapped clusters.
@@ -186,14 +186,14 @@ Set these via Helm (`--set`) or as environment variables on the container:
 | `ai.anthropic.apiKey` / `ANTHROPIC_API_KEY` | _(unset)_ | Claude via the Anthropic API (Enterprise). |
 | `ai.persistence.enabled` | `false` | Persist the AI usage ledger + incident memory (SQLite). |
 
-See `helm show values oci://ghcr.io/unishsys/charts/spyglass` for the full list.
+See `helm show values oci://ghcr.io/unishsys/charts/berth` for the full list.
 
 ## Helm configuration
 
 The chart is built for real clusters, scheduling onto tainted pools, policy
 engines, private registries, HA, and locked-down security all have first-class
 flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
-`helm upgrade --install spyglass oci://ghcr.io/unishsys/charts/spyglass -n spyglass -f my-values.yaml`.
+`helm upgrade --install berth oci://ghcr.io/unishsys/charts/berth -n berth -f my-values.yaml`.
 
 ### Scheduling & availability
 
@@ -227,7 +227,7 @@ flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 
 | Value | Default | Purpose |
 | --- | --- | --- |
-| `image.repository` / `image.tag` | `ghcr.io/unishsys/spyglass` / appVersion | Use a mirrored image / pin a version. |
+| `image.repository` / `image.tag` | `ghcr.io/unishsys/berth` / appVersion | Use a mirrored image / pin a version. |
 | `imagePullSecrets` | `[]` | Pull from a private/mirrored registry (air-gapped). |
 | `service.type` / `service.annotations` | `ClusterIP` / `{}` | e.g. an internal cloud load balancer. |
 | `ingress.*` | disabled | Expose the UI via Ingress + TLS. |
@@ -237,7 +237,7 @@ flags. Pass them with `--set`/`--set-json`, or (recommended) a values file:
 ### AI SRE assistant
 
 The dashboard has a built-in, **read-only** AI SRE that reasons over your live
-cluster. You bring the model and the key, Spyglass calls the provider directly
+cluster. You bring the model and the key, Berth calls the provider directly
 from inside the cluster and never proxies, meters, or bills tokens. Local Ollama
 is available on every tier; Claude (Anthropic API or Amazon Bedrock, on your own
 key) needs an Enterprise license **and** dashboard auth (`auth.mode != none`), so
@@ -247,7 +247,7 @@ an anonymous caller can never spend your key.
 | --- | --- | --- |
 | `ai.providers` | `ollama` | Comma-separated: `ollama`, `anthropic`, `claude` (alias `bedrock`). |
 | `ai.defaultProvider` | _(first listed)_ | Provider used when a chat names none. |
-| `ai.ollama.host` / `ai.ollama.model` | in-cluster svc / `sabbir/spyglass-sre` | Local model endpoint and tag. |
+| `ai.ollama.host` / `ai.ollama.model` | in-cluster svc / `sabbir/berth-sre` | Local model endpoint and tag. |
 | `ai.ollama.numCtx` | `16384` | Ollama context window, do not lower (smaller loops the model). |
 | `ai.anthropic.apiKey` / `.existingSecret` | _(unset)_ | Anthropic API key inline or from a Secret (`ANTHROPIC_API_KEY`). |
 | `ai.anthropic.model` | `claude-opus-5` | e.g. `claude-sonnet-5` for lower cost. |
@@ -262,7 +262,7 @@ an anonymous caller can never spend your key.
 The rootfs is read-only, so the ledger needs a writable volume: enable
 `ai.persistence` (or leave it off to keep usage/memory in-memory). The store is a
 single-process SQLite file. Use one replica with Recreate and a local RWO block volume. NFS/RWX and overlapping replicas are unsupported. Cloud providers require persistent storage. Most of this is also editable at runtime in **Settings → AI**
-(requires auth). Full reference: `https://spyglass.agrohi.com/how-ai-works/`.
+(requires auth). Full reference: `https://berth.agrohi.com/how-ai-works/`.
 
 ### Recipes
 
@@ -293,7 +293,7 @@ ai:
 **Private / air-gapped registry:**
 ```yaml
 image:
-  repository: registry.internal/spyglass
+  repository: registry.internal/berth
 imagePullSecrets:
   - name: internal-registry
 ```
@@ -306,7 +306,7 @@ ai:
   providers: "anthropic,ollama"    # cloud + local fallback
   defaultProvider: anthropic
   anthropic:
-    existingSecret: spyglass-anthropic   # Secret with key ANTHROPIC_API_KEY
+    existingSecret: berth-anthropic   # Secret with key ANTHROPIC_API_KEY
     model: claude-opus-5
   guardrails:
     dailyTokenBudget: 2000000
@@ -323,7 +323,7 @@ ai:
   providers: "ollama"
   ollama:
     host: http://ollama.ollama.svc:11434
-    model: sabbir/spyglass-sre
+    model: sabbir/berth-sre
 ```
 
 **OpenShift (let the SCC assign UIDs):** Helm *merges* maps, so you must
@@ -385,6 +385,6 @@ extraVolumeMounts:
 
 ## Support & legal
 
-- Docs & guides: https://spyglass.agrohi.com
+- Docs & guides: https://berth.agrohi.com
 - Support: support@agrohi.com
-- License: [EULA](LICENSE) · Privacy & Terms: https://spyglass.agrohi.com
+- License: [EULA](LICENSE) · Privacy & Terms: https://berth.agrohi.com

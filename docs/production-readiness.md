@@ -1,6 +1,6 @@
 # Deployment and upgrade guide
 
-Spyglass is a single-cluster dashboard for trusted cluster administrators. All authenticated users have the same service-account powers, including reading/editing Secret YAML. Proxy identities support audit attribution; they do not implement per-user Kubernetes authorization. Restrict access accordingly and use TLS.
+Berth is a single-cluster dashboard for trusted cluster administrators. All authenticated users have the same service-account powers, including reading/editing Secret YAML. Proxy identities support audit attribution; they do not implement per-user Kubernetes authorization. Restrict access accordingly and use TLS.
 
 The backend defaults to token authentication and requires at least 32 random characters. The chart generates a token unless you provide one/existing Secret. Proxy mode additionally requires `auth.proxyTrustedCIDRs` for actual socket peers. The proxy must strip/replace user identity headers after authentication; restrict direct access to those peers. Local `remotecluster` mode binds loopback by default; unauthenticated mode is only available there explicitly.
 

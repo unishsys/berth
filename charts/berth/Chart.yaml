@@ -1,13 +1,13 @@
 apiVersion: v2
-name: spyglass
-description: Spyglass, a user-friendly web dashboard for your Kubernetes cluster.
+name: berth
+description: Berth, a user-friendly web dashboard for your Kubernetes cluster.
 type: application
 # Chart version and the app/image version it deploys. Bump together on release.
 version: 0.4.0
 appVersion: "0.4.0"
-home: https://spyglass.agrohi.com
+home: https://berth.agrohi.com
 sources:
-  - https://github.com/unishsys/spyglass
+  - https://github.com/unishsys/berth
 maintainers:
-  - name: Spyglass
+  - name: Berth
     email: support@agrohi.com

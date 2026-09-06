@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 def render(*values):
-    args = ['helm', 'template', 'spyglass', 'charts/spyglass']
+    args = ['helm', 'template', 'berth', 'charts/berth']
     for value in values:
         args += ['--set', value]
     return subprocess.run(args, cwd=ROOT, capture_output=True, text=True)

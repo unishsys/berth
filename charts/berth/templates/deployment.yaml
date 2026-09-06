@@ -1,6 +1,6 @@
 {{- if and .Values.ai.persistence.enabled (not (has .Values.ai.persistence.accessMode (list "ReadWriteOnce" "ReadWriteOncePod"))) }}{{ fail "AI SQLite storage requires a local RWO/RWOP block volume; shared RWX is unsupported" }}{{ end -}}
 {{- if ne .Values.strategy.type "Recreate" }}{{ fail "strategy.type must be Recreate to avoid overlapping SQLite writers" }}{{ end -}}
-{{- if ne (int .Values.replicaCount) 1 }}{{ fail "Spyglass requires replicaCount=1: SQLite and WebSocket tickets are process-local" }}{{ end -}}
+{{- if ne (int .Values.replicaCount) 1 }}{{ fail "Berth requires replicaCount=1: SQLite and WebSocket tickets are process-local" }}{{ end -}}
 {{- if not (has .Values.auth.mode (list "token" "proxy-header")) }}{{ fail "in-cluster authentication must be token or proxy-header" }}{{ end -}}
 {{- if and (eq .Values.auth.mode "proxy-header") (empty .Values.auth.proxyTrustedCIDRs) }}{{ fail "proxy-header requires auth.proxyTrustedCIDRs" }}{{ end -}}
 {{- $ai := .Values.ai | default dict -}}
@@ -13,9 +13,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spyglass
+  name: berth
   labels:
-    {{- include "spyglass.labels" . | nindent 4 }}
+    {{- include "berth.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -29,11 +29,11 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "spyglass.selectorLabels" . | nindent 6 }}
+      {{- include "berth.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "spyglass.labels" . | nindent 8 }}
+        {{- include "berth.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -48,7 +48,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: spyglass
+      serviceAccountName: berth
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -80,8 +80,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: spyglass
-        image: "{{ include "spyglass.image" . }}"
+      - name: berth
+        image: "{{ include "berth.image" . }}"
         command: ["/mapper"]
         args: ["incluster"]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -100,14 +100,14 @@ spec:
         - name: AUTH_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.auth.existingSecret | default (include "spyglass.secretName" .) }}
+              name: {{ .Values.auth.existingSecret | default (include "berth.secretName" .) }}
               key: AUTH_TOKEN
         {{- end }}
         {{- if or .Values.license.key .Values.license.existingSecret }}
         - name: LICENSE_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.license.existingSecret | default (include "spyglass.secretName" .) }}
+              name: {{ .Values.license.existingSecret | default (include "berth.secretName" .) }}
               key: LICENSE_KEY
         {{- end }}
         - name: UPGRADE_URL
@@ -137,7 +137,7 @@ spec:
         - name: OLLAMA_HOST
           value: {{ $aiOllama.host | default "http://ollama.ollama.svc:11434" | quote }}
         - name: OLLAMA_MODEL
-          value: {{ $aiOllama.model | default "sabbir/spyglass-sre" | quote }}
+          value: {{ $aiOllama.model | default "sabbir/berth-sre" | quote }}
         - name: OLLAMA_NUM_CTX
           value: {{ $aiOllama.numCtx | default 16384 | int64 | quote }}
         - name: OLLAMA_MAX_TOKENS
@@ -155,7 +155,7 @@ spec:
         - name: ANTHROPIC_API_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ $aiAnthropic.existingSecret | default (include "spyglass.secretName" .) }}
+              name: {{ $aiAnthropic.existingSecret | default (include "berth.secretName" .) }}
               key: ANTHROPIC_API_KEY
         {{- end }}
         # Claude via Amazon Bedrock (Enterprise)
@@ -171,7 +171,7 @@ spec:
         - name: AWS_BEARER_TOKEN_BEDROCK
           valueFrom:
             secretKeyRef:
-              name: {{ $aiBedrock.existingSecret | default (include "spyglass.secretName" .) }}
+              name: {{ $aiBedrock.existingSecret | default (include "berth.secretName" .) }}
               key: AWS_BEARER_TOKEN_BEDROCK
         {{- end }}
         # Spend guardrails (cloud providers only)
@@ -259,7 +259,7 @@ spec:
       {{- if $aiPersist.enabled }}
       - name: ai-data
         persistentVolumeClaim:
-          claimName: {{ include "spyglass.aiPvcName" . }}
+          claimName: {{ include "berth.aiPvcName" . }}
       {{- end }}
       {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
