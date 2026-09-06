@@ -8,9 +8,9 @@ no existingClaim is supplied. See values.yaml for the multi-replica caveat.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "spyglass.aiPvcName" . }}
+  name: {{ include "berth.aiPvcName" . }}
   labels:
-    {{- include "spyglass.labels" . | nindent 4 }}
+    {{- include "berth.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

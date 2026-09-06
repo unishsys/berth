@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/unishsys/spyglass
+  repository: ghcr.io/unishsys/berth
   # Empty defaults to the chart appVersion (pinned, immutable). Override to pin
   # a specific tag/digest. Avoid "latest" in production.
   tag: ""
@@ -20,7 +20,7 @@ service:
   #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"     (EKS)
   annotations: {}
 
-# Authentication. Spyglass has full cluster read/write access, so the SECURE
+# Authentication. Berth has full cluster read/write access, so the SECURE
 # default is `token`: an auth token is auto-generated (and kept stable across
 # upgrades) unless you supply one. The chart rejects `none`; local binary development has an explicit loopback-only option.
 auth:
@@ -37,10 +37,10 @@ license:
   existingSecret: "" # Secret holding key LICENSE_KEY (overrides .key)
 
 # Where the in-app "start a trial / upgrade" prompts link to.
-upgradeUrl: https://spyglass.agrohi.com/pricing/
+upgradeUrl: https://berth.agrohi.com/pricing/
 
 # AI SRE assistant. Provider-pluggable and runs IN-PROCESS in the dashboard (no
-# separate service, no Spyglass-hosted endpoint). You bring the model and the
+# separate service, no Berth-hosted endpoint). You bring the model and the
 # key: the dashboard calls the provider directly from inside your cluster with
 # credentials you supply. Every tool the agent has is READ-ONLY, it inspects
 # the cluster and proposes fixes, it never applies changes.
@@ -70,10 +70,10 @@ ai:
   snapshotIntervalSeconds: 25
 
   # Ollama (local model). Point host at an in-cluster Ollama service. The default
-  # model is the tuned, published Spyglass SRE model.
+  # model is the tuned, published Berth SRE model.
   ollama:
     host: "http://ollama.ollama.svc:11434"
-    model: "sabbir/spyglass-sre"
+    model: "sabbir/berth-sre"
     # Context window. Ollama's own default (4096) is too small for the SRE tools
     # and makes the model loop/derail; keep this at 16384+.
     numCtx: 16384
@@ -97,7 +97,7 @@ ai:
     region: "us-east-1"
     model: "" # empty = backend default (anthropic.claude-opus-4-8)
 
-  # Spend guardrails for CLOUD providers only (this is YOUR provider bill; Spyglass
+  # Spend guardrails for CLOUD providers only (this is YOUR provider bill; Berth
   # never meters or bills tokens). Token budgets are enforced BEFORE a run starts,
   # using estimated in-flight reservations. Actual usage can exceed the hold; use provider-side caps.
   # 0 = unlimited.
@@ -225,7 +225,7 @@ topologySpreadConstraints: []
 #    whenUnsatisfiable: ScheduleAnyway
 #    labelSelector:
 #      matchLabels:
-#        app: spyglass
+#        app: berth
 
 # Protect the dashboard from preemption/eviction under pressure, useful on
 # spot/preemptible pools. e.g. "system-cluster-critical" or your own class.

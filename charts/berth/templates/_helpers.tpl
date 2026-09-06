@@ -1,13 +1,13 @@
 {{/*
 Common labels applied to every object.
 */}}
-{{- define "spyglass.labels" -}}
-app.kubernetes.io/name: spyglass
+{{- define "berth.labels" -}}
+app.kubernetes.io/name: berth
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
-app: spyglass
+app: berth
 {{- with .Values.commonLabels }}
 {{ toYaml . }}
 {{- end }}
@@ -16,28 +16,28 @@ app: spyglass
 {{/*
 Pod selector labels (stable across upgrades — never include version here).
 */}}
-{{- define "spyglass.selectorLabels" -}}
-app: spyglass
+{{- define "berth.selectorLabels" -}}
+app: berth
 {{- end -}}
 
 {{/*
 Fully-qualified image reference. image.tag defaults to the chart appVersion so
 the deployed version is pinned (never floats to :latest).
 */}}
-{{- define "spyglass.image" -}}
+{{- define "berth.image" -}}
 {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
 {{- end -}}
 
 {{/*
 Name of the chart-managed Secret that holds AUTH_TOKEN and/or LICENSE_KEY.
 */}}
-{{- define "spyglass.secretName" -}}
-spyglass-secrets
+{{- define "berth.secretName" -}}
+berth-secrets
 {{- end -}}
 
 {{/*
 Name of the PVC backing the AI data dir (ledger + memory + settings).
 */}}
-{{- define "spyglass.aiPvcName" -}}
-{{ ((.Values.ai | default dict).persistence | default dict).existingClaim | default "spyglass-ai-data" }}
+{{- define "berth.aiPvcName" -}}
+{{ ((.Values.ai | default dict).persistence | default dict).existingClaim | default "berth-ai-data" }}
 {{- end -}}

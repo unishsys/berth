@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: spyglass
+  name: berth
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "spyglass.labels" . | nindent 4 }}
+    {{- include "berth.labels" . | nindent 4 }}
   {{- if or .Values.commonAnnotations .Values.serviceAccount.annotations }}
   annotations:
     {{- with .Values.commonAnnotations }}
@@ -28,9 +28,9 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: spyglass
+  name: berth
   labels:
-    {{- include "spyglass.labels" . | nindent 4 }}
+    {{- include "berth.labels" . | nindent 4 }}
 rules:
 - apiGroups: [""]
   resources: ["namespaces"]
@@ -123,15 +123,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: spyglass
+  name: berth
   labels:
-    {{- include "spyglass.labels" . | nindent 4 }}
+    {{- include "berth.labels" . | nindent 4 }}
 subjects:
 - kind: ServiceAccount
-  name: spyglass
+  name: berth
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: spyglass
+  name: berth
   apiGroup: rbac.authorization.k8s.io
 {{- end }}

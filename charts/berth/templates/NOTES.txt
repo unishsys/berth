@@ -1,6 +1,6 @@
 {{- $ai := .Values.ai | default dict -}}
 {{- $aiPersist := $ai.persistence | default dict -}}
-Spyglass {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
+Berth {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
 
 {{ if eq .Values.auth.mode "none" -}}
 WARNING: AUTH_MODE=none, the dashboard is UNAUTHENTICATED. Anyone who can reach it has
@@ -8,7 +8,7 @@ WARNING: AUTH_MODE=none, the dashboard is UNAUTHENTICATED. Anyone who can reach 
 {{- else if eq .Values.auth.mode "token" -}}
 Auth: a Bearer token is required. Read it with:
 
-  kubectl -n {{ .Release.Namespace }} get secret {{ .Values.auth.existingSecret | default (include "spyglass.secretName" .) }} -o jsonpath='{.data.AUTH_TOKEN}' | base64 -d ; echo
+  kubectl -n {{ .Release.Namespace }} get secret {{ .Values.auth.existingSecret | default (include "berth.secretName" .) }} -o jsonpath='{.data.AUTH_TOKEN}' | base64 -d ; echo
 {{- else -}}
 Auth: proxy-header mode, your upstream proxy must set {{ .Values.auth.proxyHeader }}.
 {{- end }}
@@ -28,6 +28,6 @@ Access:
 {{- if .Values.ingress.enabled }}
   https://{{ .Values.ingress.host }}/
 {{- else }}
-  kubectl -n {{ .Release.Namespace }} port-forward svc/spyglass {{ .Values.service.port }}:{{ .Values.service.port }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/berth {{ .Values.service.port }}:{{ .Values.service.port }}
   then open  http://localhost:{{ .Values.service.port }}/
 {{- end }}

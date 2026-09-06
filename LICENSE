@@ -1,10 +1,10 @@
-Spyglass End User License Agreement (EULA)
+Berth End User License Agreement (EULA)
 
 Copyright (c) 2026 Unish Systems. All rights reserved.
 
 IMPORTANT — READ CAREFULLY. This End User License Agreement ("Agreement") is a
 legal agreement between you (an individual or a single entity, "You") and Unish
-Systems ("Licensor") for the Spyglass software, including its container images,
+Systems ("Licensor") for the Berth software, including its container images,
 binaries, Helm charts, and documentation (collectively, the "Software"). By
 installing, copying, accessing, or otherwise using the Software, You agree to be
 bound by this Agreement. If You do not agree, do not install or use the Software.
@@ -78,4 +78,4 @@ it reviewed and adapted by qualified legal counsel before commercial use.
    rules. If any provision is unenforceable, the remainder stays in effect. This
    Agreement is the entire agreement between the parties regarding the Software.
 
-Contact: legal@spyglass.sh
+Contact: legal@berth.sh
