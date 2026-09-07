@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest a capability or improvement for Berth
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. If you want to gauge community interest
+        before it is scoped, consider opening an Ideas Discussion instead.
+        Feature requests here are for concrete, actionable proposals.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+      placeholder: When I run Berth against a large cluster, I cannot ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like Berth to do?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Berth does this touch?
+      options:
+        - AI engine
+        - Kubernetes SRE tools
+        - Helm and deployment
+        - Licensing
+        - Backend and API
+        - Frontend and dashboard
+        - Authentication
+        - Install and onboarding
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches or workarounds you have thought about.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and Discussions and did not find a duplicate.
+          required: true
