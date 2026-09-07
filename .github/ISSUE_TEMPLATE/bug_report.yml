@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in Berth is broken or behaving unexpectedly
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please search existing
+        issues first to avoid duplicates. For usage questions or "how do I"
+        help, use Q&A Discussions instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear description of the bug, including what you expected instead.
+      placeholder: Berth reported X, but I expected Y.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Deploy Berth with ...
+        2. Open the dashboard and ...
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Berth version
+      description: Chart version, image tag, or binary version (see the About page or `--version`).
+      placeholder: "0.4.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How did you deploy Berth?
+      options:
+        - Helm chart
+        - Container image (manual manifests)
+        - Prebuilt binary
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: kubernetes
+    attributes:
+      label: Kubernetes distribution and version
+      description: e.g. EKS 1.30, AKS 1.29, k3s, kind.
+      placeholder: "EKS 1.30"
+    validations:
+      required: true
+  - type: dropdown
+    id: ai-provider
+    attributes:
+      label: AI provider in use
+      options:
+        - Anthropic (direct API)
+        - AWS Bedrock
+        - Ollama (local)
+        - None / not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Paste logs or attach screenshots. Redact cluster names, tokens, and anything sensitive.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I removed secrets, tokens, and sensitive cluster details from the report.
+          required: true

@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and troubleshooting
+    url: https://github.com/unishsys/berth/discussions/categories/q-a
+    about: Setup help, configuration, and "how do I" questions belong in Q&A Discussions.
+  - name: Feature ideas and product direction
+    url: https://github.com/unishsys/berth/discussions/categories/ideas
+    about: Share and upvote ideas before they become tracked work.
+  - name: Documentation and install guide
+    url: https://berth.agrohi.com
+    about: Read the docs before filing, your question may already be answered.
+  - name: Report a security vulnerability
+    url: https://github.com/unishsys/berth/security/advisories/new
+    about: Do not open a public issue for security problems. Report privately here.
